@@ -8,6 +8,8 @@ gi.require_version("Gtk", "3.0")
 from cairo import Context as cairoContext
 from gi.repository import Gdk, GLib, Gtk
 
+from ks_includes.widgets.color_utils import get_css_color
+
 
 class HeaterGraph(Gtk.DrawingArea):
     def __init__(self, screen, printer, font_size, fullscreen=False, store=None):
@@ -85,13 +87,17 @@ class HeaterGraph(Gtk.DrawingArea):
         Gtk.render_background(
             da.get_style_context(), ctx, 0, 0, da.get_allocated_width(), da.get_allocated_height()
         )
+
+        # Get theme color for text and grid lines
+        text_color = get_css_color(self)
+
         x = round(self.font_size * 2.75)
         y = 10
         width = da.get_allocated_width() - 15
         height = da.get_allocated_height() - self.font_size * 2
         gsize = [[x, y], [width, height]]
 
-        ctx.set_source_rgb(0.5, 0.5, 0.5)
+        ctx.set_source_rgb(*text_color)
         ctx.set_line_width(1)
         ctx.set_tolerance(1)
 
@@ -172,13 +178,16 @@ class HeaterGraph(Gtk.DrawingArea):
         hscale = (gsize[1][1] - gsize[0][1]) / (r * nscale)
         ctx.set_font_size(self.font_size)
 
+        # Get theme color for text and grid
+        text_color = get_css_color(self)
+
         for i in range(r):
-            ctx.set_source_rgb(0.5, 0.5, 0.5)
+            ctx.set_source_rgb(*text_color)
             lheight = gsize[1][1] - nscale * i * hscale
             ctx.move_to(6, lheight + 3)
             ctx.show_text(str(nscale * i).rjust(3, " "))
             ctx.stroke()
-            ctx.set_source_rgba(0.5, 0.5, 0.5, 0.2)
+            ctx.set_source_rgba(*text_color, 0.2)
             ctx.move_to(gsize[0][0], lheight)
             ctx.line_to(gsize[1][0], lheight)
             ctx.stroke()
@@ -192,17 +201,20 @@ class HeaterGraph(Gtk.DrawingArea):
         font_size_multiplier = round(self.font_size * 1.5)
         ctx.set_font_size(self.font_size)
 
+        # Get theme color for text and grid
+        text_color = get_css_color(self)
+
         i = 0
         while True:
             x = first - i * steplen
             if x < gsize[0][0]:
                 break
-            ctx.set_source_rgba(0.5, 0.5, 0.5, 0.2)
+            ctx.set_source_rgba(*text_color, 0.2)
             ctx.move_to(x, gsize[0][1])
             ctx.line_to(x, gsize[1][1])
             ctx.stroke()
 
-            ctx.set_source_rgb(0.5, 0.5, 0.5)
+            ctx.set_source_rgb(*text_color)
             ctx.move_to(x - font_size_multiplier, gsize[1][1] + font_size_multiplier)
 
             ctx.show_text(f"{now - datetime.timedelta(minutes=2) * i:%H:%M}")

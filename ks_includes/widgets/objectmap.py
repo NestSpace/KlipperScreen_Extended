@@ -5,6 +5,8 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gdk, Gtk
 
+from ks_includes.widgets.color_utils import get_css_color, invert_lightness
+
 
 class ObjectMap(Gtk.DrawingArea):
     def __init__(self, screen, printer, font_size):
@@ -86,8 +88,17 @@ class ObjectMap(Gtk.DrawingArea):
                 self.max_x = max(self.max_x, point[0])
                 self.max_y = max(self.max_y, point[1])
 
+        # Get theme colors
+        text_color = get_css_color(self)
+        inverse_color = invert_lightness(*text_color)
+
+        # Get semantic red color for current object
+        style_context = self.get_style_context()
+        found_red, red_rgba = style_context.lookup_color('solarized-red')
+        red_color = (red_rgba.red, red_rgba.green, red_rgba.blue) if found_red else (1.0, 0.0, 0.0)
+
         # Styling
-        ctx.set_source_rgb(0.5, 0.5, 0.5)  # Grey
+        ctx.set_source_rgb(*text_color)
         ctx.set_line_width(1)
         ctx.set_font_size(self.font_size)
 
@@ -126,11 +137,11 @@ class ObjectMap(Gtk.DrawingArea):
         for obj in self.objects:
             # change the color depending on the status
             if obj["name"] == self.printer.get_stat("exclude_object", "current_object"):
-                ctx.set_source_rgb(1, 0, 0)  # Red
+                ctx.set_source_rgb(*red_color)  # Current object in red
             elif obj["name"] in self.printer.get_stat("exclude_object", "excluded_objects"):
-                ctx.set_source_rgb(0, 0, 0)  # Black
+                ctx.set_source_rgb(*inverse_color)  # Excluded objects in inverted color
             else:
-                ctx.set_source_rgb(0.5, 0.5, 0.5)  # Grey
+                ctx.set_source_rgb(*text_color)  # Other objects in theme color
             for i, point in enumerate(obj["polygon"]):
                 # Convert coordinates from bed to screen-graph
                 x = self.x_bed_to_graph(da.get_allocated_width(), point[0])

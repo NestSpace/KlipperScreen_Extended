@@ -3,6 +3,8 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
+from ks_includes.widgets.color_utils import get_css_color, invert_lightness, saturation_gradient
+
 
 class BedMap(Gtk.DrawingArea):
     def __init__(self, font_size, bm):
@@ -102,9 +104,20 @@ class BedMap(Gtk.DrawingArea):
         ctx.set_line_width(1)
         ctx.set_font_size(self.font_size)
 
+        # Get theme colors
+        text_color = get_css_color(self)
+        inverse_color = invert_lightness(*text_color)
+
+        # Get semantic colors for gradient
+        style_context = self.get_style_context()
+        found_red, red_rgba = style_context.lookup_color('solarized-red')
+        found_blue, blue_rgba = style_context.lookup_color('solarized-blue')
+        red_color = (red_rgba.red, red_rgba.green, red_rgba.blue) if found_red else (1.0, 0.0, 0.0)
+        blue_color = (blue_rgba.red, blue_rgba.green, blue_rgba.blue) if found_blue else (0.0, 0.0, 1.0)
+
         if self.bm is None:
             ctx.move_to(self.font_spacing, height / 2)
-            ctx.set_source_rgb(0.5, 0.5, 0.5)
+            ctx.set_source_rgb(*text_color)
             ctx.show_text(_("No mesh has been loaded"))
             ctx.stroke()
             return
@@ -119,7 +132,7 @@ class BedMap(Gtk.DrawingArea):
             height - int(self.font_size / 2),
         ]
 
-        ctx.set_source_rgb(0.5, 0.5, 0.5)
+        ctx.set_source_rgb(*text_color)
         ctx.move_to(*text_side_middle)
         ctx.show_text(f"{'Y' if self.rotation in (0, 180) else 'X'}")
         ctx.move_to(*text_bottom_middle)
@@ -148,8 +161,14 @@ class BedMap(Gtk.DrawingArea):
                     continue
                 lx = (gwidth / columns * j) + self.font_size * 2.2
                 rx = lx + gwidth / columns
-                # Colors
-                ctx.set_source_rgb(*self.colorbar(column))
+                # Colors - use HSL saturation gradient
+                if column > 0:
+                    color = saturation_gradient(*red_color, column, 0.25)
+                elif column < 0:
+                    color = saturation_gradient(*blue_color, abs(column), 0.25)
+                else:
+                    color = (1, 1, 1)  # White at zero
+                ctx.set_source_rgb(*color)
                 ctx.move_to(lx, ty)
                 ctx.line_to(lx, by)
                 ctx.line_to(rx, by)
@@ -157,10 +176,10 @@ class BedMap(Gtk.DrawingArea):
                 ctx.close_path()
                 ctx.fill()
                 ctx.stroke()
-                # Numbers
+                # Numbers - use inverted lightness for contrast
                 if gwidth / columns < self.font_size * 3:
                     continue
-                ctx.set_source_rgb(0, 0, 0)
+                ctx.set_source_rgb(*inverse_color)
                 if column > 0:
                     ctx.move_to((lx + rx) / 2 - self.font_size, (ty + by + self.font_size) / 2)
                 else:
