@@ -356,9 +356,9 @@ class KlipperScreenConfig:
                     "name": _("Icon Theme"),
                     "type": "dropdown",
                     "tooltip": _("Changes how the interface looks"),
-                    "value": "z-bolt",
+                    "value": "nestspace",
                     "callback": screen.change_theme,
-                    "options": [{"name": "Z-bolt" + " " + _("(default)"), "value": "z-bolt"}],
+                    "options": [{"name": "NestSpace" + " " + _("(default)"), "value": "nestspace"}],
                 }
             },
             {
@@ -611,7 +611,7 @@ class KlipperScreenConfig:
         themes = [
             d
             for d in os.listdir(t_path)
-            if (not os.path.isfile(os.path.join(t_path, d)) and d not in ("z-bolt", "printers"))
+            if (not os.path.isfile(os.path.join(t_path, d)) and d not in ("nestspace", "printers"))
         ]
         themes.sort()
 
